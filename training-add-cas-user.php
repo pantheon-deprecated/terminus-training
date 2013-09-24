@@ -6,16 +6,24 @@ $verbose = true;
 $drush_dir = $_SERVER['HOME'] . '/.drush';
 $tmp_dir = $_SERVER['HOME'] . '/tmp';
 $drush = exec('which drush');
-$ldap_server = 'nds-test.berkeley.edu';
+$ldap_server = 'nds.berkeley.edu'; //'nds-test.berkeley.edu';
+$output_file="/tmp/" . str_replace('.php', '', basename(__FILE__)) . "-out.txt";
 
 //always add these admins
 $default_admins = array(
-  '213108', //bwood
-  '1043991', // instructor helen nishikai
-  '18493', // Kathleen Valerio
-  '212372', // test-212372
-  '212373', // test-212373
-  '212374', // test-212374
+  'bwood@berkeley.edu' => '213108',
+  'cboyden@berkeley.edu' => '248324',
+  'klu@berkeley.edu' => '304629',
+  '1' => '1043991', // instructor helen nishikai
+  'kvalerio@berkeley.edu' => '18493', // Kathleen Valerio
+  '2' => '212373', // test-212373
+  '3' => '212374', // test-212374
+);
+
+//A student uid
+$uid_student = array(
+  '0' => '1048465',
+  'kvergez@unex.berkeley.edu' => '746673',
 );
 /*
  * Functions
@@ -38,6 +46,7 @@ USAGE:
 
 php __FILE__ \
   --emails_file=/home/bwood/tmp/emails.txt \
+  --uids_file=/home/bwood/tmp/uids.txt \
   --site_list=train-editor \
 
 (site list will be expanded to ~/.drush/train-editor.aliases.drushrc.php)
@@ -83,7 +92,7 @@ if (!file_exists($options['emails_file'])) {
 
 $emails = explode("\n", file_get_contents($options['emails_file']));
 
-yesno("Have you updated your aliases with the training sites (drush paliases)?");
+//yesno("Have you updated your aliases with the training sites (drush paliases)?");
 
 /*
  * look up all with one query, problem is you can't tell which ones weren't
@@ -131,6 +140,9 @@ $attribs = array("uid");
 // lookup each email individually so we can tell which ones aren't found
 $uids = array();
 $missing = false;
+//open this file in case we need it.
+$h = fopen("$tmp_dir/emails_missing_uids.txt", "w");
+
 foreach ($emails as $email) {
   //skip blank lines in file
   if (empty($email)) continue;
@@ -139,20 +151,19 @@ foreach ($emails as $email) {
   $sr=ldap_search($ds, $dn, $filter, $attribs);
   $r = ldap_get_entries($ds, $sr);
 
-  if (intval($r['count']) > 0) {
-    $uids[] = $r[0]['uid'][0];
+  if ((intval($r['count']) > 0) && (array_key_exists('uid', $r[0]))){
+    $uids[$email] = $r[0]['uid'][0];
   }
   else {
     $missing = true;
-    $h = fopen("$tmp_dir/emails_missing_uids.txt", "w");
     fwrite($h, $email . "\n");
     print "$email: No UID\n";
   }
 }
 
+fclose($h);
 if ($missing) {
   print "Couldn't find some uids. Problem emails saved to $tmp_dir/emails_missing_uids.txt\n";
-  fclose($h);
 }
 else {
   print "Found uids for all emails. Yea!\n";
@@ -162,21 +173,42 @@ else {
 
 yesno("Shall we add the uids we found (plus default_admins) to the sites?");
 
-$uids = array_merge($default_admins, $uids);
-
-$out = array();
-foreach ($uids as $uid) {
-  $cmd = "$drush -y @" . $options['site_list'] . " cas-user-create $uid";
-  if ($verbose) print "$cmd\n";
-  exec($cmd, $out);
+if (file_exists($output_file)) {
+  unlink($output_file);
 }
 
-$out_file = "$tmp_dir/" . __FILE__ ."_out.txt";
-$h = fopen($out_file, "w");
-fwrite($h, implode("\n". $out_file));
-fclose($h);
-print "See $out_file\n";
+$uids = array_merge($default_admins, $uids, $uid_student);
 
+$out = array();
+//foreach ($uids as $uid) {
+while (list($email, $uid) = each($uids)) {
+  $cmd = "$drush -y @" . $options['site_list'] . " cas-user-create $uid";
+  if ($verbose) print "$cmd\n";
+  exec(sprintf("%s >> %s 2>&1", $cmd, $output_file));
+  if (strpos($email, '@') !== FALSE) {
+    //skip default_admins with no email. will be added later
+    //TODO: look up cn sn an use --name as below.  Email could be private or different than what we have.
+    $cmd = "$drush -y @" . $options['site_list'] . " urol administrator --mail=$email";
+    if ($verbose) print "$cmd\n";
+    exec(sprintf("%s >> %s 2>&1", $cmd, $output_file));
+  }
+
+}
+
+
+//Add admin role to default_admins with no email
+$cmd = "$drush -y @" . $options['site_list'] . " urol administrator --name=\"Helen M Nishikai\""; //Helen M Nishikai
+exec(sprintf("%s >> %s 2>&1", $cmd, $output_file));
+$cmd = "$drush -y @" . $options['site_list'] . " urol administrator --name=\"AFF-LIMITED TEST\"";//AFF-LIMITED TEST
+exec(sprintf("%s >> %s 2>&1", $cmd, $output_file));
+$cmd = "$drush -y @" . $options['site_list'] . " urol administrator --name=\"AFF-GUEST TEST\"";//AFF-GUEST TEST
+exec(sprintf("%s >> %s 2>&1", $cmd, $output_file));
+
+//special case
+$cmd = "$drush -y @" . $options['site_list'] . " urol administrator --name=\"1048465\"";//AFF-GUEST TEST
+exec(sprintf("%s >> %s 2>&1", $cmd, $output_file));
+
+print "Please see\nless $output_file\n";
 
 
 
