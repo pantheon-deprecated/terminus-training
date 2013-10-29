@@ -10,11 +10,12 @@ Setup
 
 How we use these scripts
 ------------------------
-1. Authenticate via terminus before running scripts
+1. Authenticate via terminus before running scripts. If you don't have a terminus session, the scrips will error.
 2. Spin up new sites on Pantheon
 
-    php training-1-spinup.php --number_sites=2 --number_start_at=50
-
+   ```bash
+   php training-1-spinup.php --number_sites=2 --number_start_at=50
+   ```
   This script spins up multiple site with numbered names from a (hardcoded) product (upstream repository for a drupal distribution) and associates the site with a Pantheon organization (the UC Berkeley organization is hardcoded).
 
   Drush commands are exec'd and backgrounded.  Each PID is written to a file and then killed (kill -1).  The spin-up process will continue on the pantheon host after the local process is killed.
@@ -22,8 +23,9 @@ How we use these scripts
   *TODO*: [Replace kill -l with --no_poll](https://github.com/ucb-ist-drupal/training_pantheon/issues/1)
 3. Change the Pantheon connection mode and install drupal
 
-  php training-2-cmode-install.php --start=50 --end=51 -i -p big-seKreT
-
+   ```bash
+   php training-2-cmode-install.php --start=50 --end=51 -i -p big-seKreT
+   ```
   Once the spinups have finished (wait for emails) run training-2
   script to change the connection mode of the sites and (optionally
   (-i)) install Drupal by running the install profile of the
