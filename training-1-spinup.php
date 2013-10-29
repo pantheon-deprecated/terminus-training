@@ -3,7 +3,7 @@
 /*
  * Global variables
  */
-$verbose = false;
+$verbose = FALSE;
 $output_file="/tmp/" . str_replace('.php', '', basename(__FILE__));
 $pid_file="/tmp/" . str_replace('.php', '', basename(__FILE__)) . "_pids.txt";
 $drush = exec('which drush');
@@ -21,6 +21,7 @@ USAGE:
 php path/to/training-1-spinup.php \
   --number_sites=10 \
   --number_start_at=3 \
+  -v  #turn on verbose output
 
 EOT;
 
@@ -37,9 +38,12 @@ $longopts  = array(
   "number_start_at:",     
 );
 
-$shortopts = "";
+$shortopts = "v::";
 $options = getopt($shortopts, $longopts);
 
+if (array_key_exists('v', $options)) {
+  $verbose = TRUE;
+}
 
 if (($options['number_sites'] <= 0)) {
   print($usage);
