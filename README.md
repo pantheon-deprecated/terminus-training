@@ -10,7 +10,7 @@ Setup
 
 How we use these scripts
 ------------------------
-1. Authenticate via terminus before running scripts. If you don't have a terminus session, the scrips will error.
+1. Authenticate via terminus before running scripts. If you don't have a terminus session, the scripts will fail.
 2. Spin up new sites on Pantheon
 
    ```bash
@@ -39,7 +39,7 @@ way we can restore the sites to their post-training2 state and simply
 do the add administrators step when we are preparing for the next
 training.
 
-  *TODO*: Create a script for this.
+  *TODO*: [Training-2.5-create-backups](https://github.com/ucb-ist-drupal/training_pantheon/issues/4)
   *TODO*: [Notification of Drupal install completion](https://github.com/ucb-ist-drupal/training_pantheon/issues/3)
 
 5. Add administrators on every site.
