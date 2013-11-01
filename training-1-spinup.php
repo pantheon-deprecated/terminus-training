@@ -35,7 +35,7 @@ if (!is_executable($drush)) {
 $longopts  = array(
   "number_sites:",     // Required value
 
-  "number_start_at:",     
+  "number_start_at:",
 );
 
 $shortopts = "v::";
@@ -65,7 +65,7 @@ exec("$rm $output_file" . '*');
 
 while ($i <= $max) {
   ($i < 10) ? $I = "0$i" : $I = $i;
-  $cmd = "$echo $site_name-$I | $drush pantheon-site-create $site_name-$I --product=$product_uuid --organization=$organization_uuid";
+  $cmd = "$echo $site_name-$I | $drush pantheon-site-create $site_name-$I --product=$product_uuid --organization=$organization_uuid --nopoll";
   if ($verbose) print sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $output_file . "-$site_name-$I-out.txt", $pid_file) . "\n";
   exec(sprintf("%s > %s 2>&1 & echo $! >> %s", $cmd, $output_file . "-$site_name-$I-out.txt", $pid_file));
   $i++;
@@ -75,34 +75,5 @@ $out = array();
 //print "\nLooking for errors in $output_file*:\n\n";
 print "\nPlease run:\n";
 print "\negrep -i \"fail|error\" $output_file*\n";
-
-//sleep(2);
-
-/*
- * fails because can't display ascii codes
-$cmd = "$egrep -i \"fail|error\" $output_file*";
-print "$cmd\n";
-exec($cmd, $out);
-print implode("\n", $out);
-//print_r($out);
-*/
-if (!file_exists($pid_file)) {
-  print "File doesn't exist: $pid_file.  No processes to cancel.\n";
-  exit(1);
-}
-
-// Cancel the drush processes.  Site creation will continue on the server.
-$pids = explode("\n", file_get_contents($pid_file));
-foreach  ($pids as $pid) {
-  if (empty($pid)) continue;
-  $cmd = "kill -1 $pid";
-  //if ($verbose) echo "$cmd\n";
-  //exec($cmd); //can cause jobs to fail. sleep longer?
-}
-
-
-
-//remove the pid file
-unlink($pid_file);
 
 ?>
